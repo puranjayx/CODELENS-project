@@ -1,16 +1,39 @@
+
 #pragma once
+
+#include <iostream>
 #include <string>
 #include <vector>
 #include <unordered_map>
 
-enum class TokType { Keyword, Identifier, Number, Operator, Symbol };
+using namespace std;
 
-struct Token { TokType type; std::string text; int line; };
+enum class TokType
+{
+    Keyword,
+    Identifier,
+    Number,
+    Operator,
+    Symbol
+};
 
-struct Metrics {
-    std::unordered_map<std::string,int> freq;
-    int loops = 0, branches = 0, maxLoopDepth = 0;
+struct Token
+{
+    TokType type;
+    string text;
+    int line;
+};
+
+struct Metrics
+{
+    unordered_map<string, int> freq;
+
+    int loops = 0;
+    int branches = 0;
+    int maxLoopDepth = 0;
+
     bool recursive = false;
-    std::string timeComplexity;
+
+    string timeComplexity;
     double score = 0;
 };
