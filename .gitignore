@@ -1,0 +1,6 @@
+*.exe
+codelens
+.agent/
+.agents/
+AGENTS.md
+GEMINI.md
