@@ -1,7 +1,99 @@
 
 #include "analyzer.h"
-#include <stack>
 
+
+// Check whether a loop is logarithmic
+bool isLogLoop(const SyntaxNode& node)
+{
+    for (int i = 0; i < (int)node.tokens.size(); i++)
+    {
+        // i *= 2
+        if (node.tokens[i].text == "*" &&
+            i + 1 < (int)node.tokens.size() &&
+            node.tokens[i + 1].text == "=")
+        {
+            return true;
+        }
+
+        // i = i * 2
+        if (node.tokens[i].text == "=" &&
+            i + 2 < (int)node.tokens.size() &&
+            node.tokens[i + 2].text == "*")
+        {
+            return true;
+        }
+
+        // i /= 2
+        if (node.tokens[i].text == "/" &&
+            i + 1 < (int)node.tokens.size() &&
+            node.tokens[i + 1].text == "=")
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Return loop cost
+int getLoopCost(const SyntaxNode& node)
+{
+    if (isLogLoop(node))
+        return 1;
+
+    return 2;
+}
+
+// Recursively analyze the syntax tree
+int analyzeNode(const SyntaxNode& node, int parentCost)
+{
+    int ownCost = 0;
+
+    if (node.type == NodeType::ForLoop ||
+        node.type == NodeType::WhileLoop ||
+        node.type == NodeType::DoWhileLoop)
+    {
+        ownCost = getLoopCost(node);
+    }
+
+    int currentCost = parentCost + ownCost;
+    int maxCost = currentCost;
+
+    for (const SyntaxNode& child : node.children)
+    {
+        int childCost = analyzeNode(child, currentCost);
+
+        if (childCost > maxCost)
+            maxCost = childCost;
+    }
+
+    return maxCost;
+}
+
+// Convert cost into a complexity label
+string analyzeTimeComplexity(const SyntaxNode& root)
+{
+    int cost = analyzeNode(root, 0);
+
+    if (cost == 0)
+        return "O(1)";
+
+    if (cost == 1)
+        return "O(log n)";
+
+    if (cost == 2)
+        return "O(n)";
+
+    if (cost == 3)
+        return "O(n log n)";
+
+    if (cost == 4)
+        return "O(n^2)";
+
+    return "O(n^" + to_string(cost / 2) + ")";
+}
+
+// Existing keyword counter
 void countKeywords(const vector<Token>& tokens)
 {
     int forCount = 0;
@@ -12,56 +104,8 @@ void countKeywords(const vector<Token>& tokens)
     int switchCount = 0;
     int caseCount = 0;
 
-    // Loop nesting ke liye
-    int loopDepth = 0;
-    int maxDepth = 0;
-
-    stack<bool> st;
-    vector<bool> loopBody(tokens.size(), false);
-
-    // Identify loop bodies that use braces
-    for (int i = 0; i < tokens.size(); i++)
+    for (const Token& t : tokens)
     {
-        if (tokens[i].text == "for" ||
-            tokens[i].text == "while" ||
-            tokens[i].text == "do")
-        {
-            int j = i + 1;
-
-            if (tokens[i].text == "do")
-            {
-                if (j < tokens.size() && tokens[j].text == "{")
-                    loopBody[j] = true;
-            }
-            else
-            {
-                // Find opening brace after loop condition
-                if (j < tokens.size() && tokens[j].text == "(")
-                {
-                    int brackets = 1;
-                    j++;
-
-                    while (j < tokens.size() && brackets > 0)
-                    {
-                        if (tokens[j].text == "(")
-                            brackets++;
-                        else if (tokens[j].text == ")")
-                            brackets--;
-
-                        j++;
-                    }
-
-                    if (j < tokens.size() && tokens[j].text == "{")
-                        loopBody[j] = true;
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < tokens.size(); i++)
-    {
-        const Token& t = tokens[i];
-
         if (t.type == TokType::Keyword)
         {
             if (t.text == "for")
@@ -79,27 +123,6 @@ void countKeywords(const vector<Token>& tokens)
             else if (t.text == "case")
                 caseCount++;
         }
-
-        if (t.text == "{")
-        {
-            bool isLoop = loopBody[i];
-            st.push(isLoop);
-
-            if (isLoop)
-            {
-                loopDepth++;
-
-                if (loopDepth > maxDepth)
-                    maxDepth = loopDepth;
-            }
-        }
-        else if (t.text == "}" && !st.empty())
-        {
-            if (st.top())
-                loopDepth--;
-
-            st.pop();
-        }
     }
 
     cout << "\nLoop and Conditional Keywords:\n";
@@ -110,7 +133,4 @@ void countKeywords(const vector<Token>& tokens)
     cout << "else    : " << elseCount << "\n";
     cout << "switch  : " << switchCount << "\n";
     cout << "case    : " << caseCount << "\n";
-
-    cout << "\nLoop Nesting Information:\n";
-    cout << "Maximum loop depth : " << maxDepth << "\n";
 }

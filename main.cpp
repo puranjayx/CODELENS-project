@@ -1,6 +1,8 @@
 
 #include "lexer.h"
 #include "analyzer.h"
+#include "structure_builder.h"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -9,7 +11,7 @@
 
 using namespace std;
 
-// Brackets check karne ka function
+// Check whether brackets are balanced
 bool checkBrackets(const vector<Token>& tokens)
 {
     stack<char> st;
@@ -23,9 +25,7 @@ bool checkBrackets(const vector<Token>& tokens)
         else if (t.text == ")" || t.text == "}" || t.text == "]")
         {
             if (st.empty())
-            {
                 return false;
-            }
 
             char top = st.top();
             st.pop();
@@ -44,14 +44,14 @@ bool checkBrackets(const vector<Token>& tokens)
 
 int main(int argc, char* argv[])
 {
-    // Check karo ki file ka naam diya hai ya nahi
+    // Check file name
     if (argc < 2)
     {
         cout << "Usage: codelens <file.cpp>\n";
         return 1;
     }
 
-    // File open karo
+    // Open source file
     ifstream f(argv[1]);
 
     if (!f)
@@ -60,34 +60,42 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // File ka pura content read karo
+    // Read complete source code
     stringstream ss;
     ss << f.rdbuf();
 
     string sourceCode = ss.str();
 
-    // Source code ko tokens mein convert karo
+    // Convert source code into tokens
     vector<Token> tokens = tokenize(sourceCode);
 
-    // NEW: Tokens banne ke baad brackets check karo
+    // Check brackets
     if (checkBrackets(tokens))
-    {
         cout << "\nBrackets are balanced\n";
-    }
     else
-    {
         cout << "\nBrackets are NOT balanced\n";
-    }
 
-    // Har token ki frequency count karo
+    // Build syntax tree
+    SyntaxNode root = buildSyntaxTree(tokens);
+
+    cout << "\nSyntax Tree:\n";
+    printSyntaxTree(root);
+
+    cout << "\nSyntax Tree Information:\n";
+    cout << "Tree created successfully\n";
+    cout << "Top-level nodes: " << root.children.size() << "\n";
+
+    // NEW: Tree-based time complexity analysis
+    cout << "\nTree-Based Time Complexity: "
+         << analyzeTimeComplexity(root) << "\n";
+
+    // Count token frequencies
     unordered_map<string, int> freq;
 
     for (const Token& t : tokens)
-    {
         freq[t.text]++;
-    }
 
-    // Category-wise token count
+    // Count tokens by category
     int keywordCount = 0;
     int identifierCount = 0;
     int numberCount = 0;
@@ -97,60 +105,45 @@ int main(int argc, char* argv[])
     for (const Token& t : tokens)
     {
         if (t.type == TokType::Keyword)
-        {
             keywordCount++;
-        }
         else if (t.type == TokType::Identifier)
-        {
             identifierCount++;
-        }
         else if (t.type == TokType::Number)
-        {
             numberCount++;
-        }
         else if (t.type == TokType::Operator)
-        {
             operatorCount++;
-        }
         else if (t.type == TokType::Symbol)
-        {
             symbolCount++;
-        }
     }
 
-    // Token types ki information
+    // Token type information
     cout << "\nToken Type Information:\n";
-
     cout << "0 - Keyword    : int, for, if\n";
     cout << "1 - Identifier : i, n, bubbleSort\n";
     cout << "2 - Number     : 0, 1, 10\n";
     cout << "3 - Operator   : =, <, ++, -\n";
-    cout << "4 - Symbol     : (, ), {, ;\n";
+    cout << "4 - Symbol     : (, ), {, }, ;\n";
 
-
+    // Existing keyword information
     countKeywords(tokens);
 
-    // Category-wise counts print karo
+    // Print category-wise counts
     cout << "\nCategory-wise Token Count:\n";
-
     cout << "Keywords    : " << keywordCount << "\n";
     cout << "Identifiers : " << identifierCount << "\n";
     cout << "Numbers     : " << numberCount << "\n";
     cout << "Operators   : " << operatorCount << "\n";
     cout << "Symbols     : " << symbolCount << "\n";
 
-    // Har token ki frequency print karo
+    // Print token frequencies
     cout << "\nToken Frequencies:\n";
 
     for (const auto& item : freq)
-    {
         cout << item.first << " : " << item.second << "\n";
-    }
 
-    // Saare tokens print karo
+    // Print all tokens
     cout << "\nTokens:\n";
-
-    cout << "line number \t type \t\t token\n";
+    cout << "Line number \t Type \t\t Token\n";
 
     for (const Token& t : tokens)
     {
