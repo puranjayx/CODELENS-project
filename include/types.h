@@ -69,3 +69,20 @@ struct Metrics
     string timeComplexity;
     double score = 0;
 };
+
+
+struct AnalysisRecord
+{
+    string programName;
+    string sourceCode;
+    string timeComplexity;
+
+    int loopCount = 0;
+    int keywordCount = 0;
+    int identifierCount = 0;
+    int numberCount = 0;
+    int operatorCount = 0;
+    int symbolCount = 0;
+
+    double score = 0;
+};
